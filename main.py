@@ -3,7 +3,7 @@ import json
 from langchain_ollama import OllamaLLM
 from langchain_core.prompts import ChatPromptTemplate
 
-# Função para inicializar o modelo da IA com um prompt financeiro
+
 def initialize_model():
     template = """
     Crie um relatório financeiro detalhado, levando em consideração as seguintes diretrizes:
@@ -15,51 +15,48 @@ def initialize_model():
     Apresente as estimativas de impacto percentual no lucro anual e nos resultados financeiros gerais da empresa.
     O foco deve ser em fatos e dados comprovados, garantindo que as decisões sugeridas sejam baseadas em evidências financeiras sólidas.
 
-    Data (JSON format): {financial_data}
+    Data (JSON format): {json_data}
 
     Relatório:
-    {{}}
+    {{}}  # Indica onde a resposta será gerada
     """
     
-    model = OllamaLLM(model="llama3")
-    prompt = ChatPromptTemplate.from_template(template)
-    return prompt | model
+    model = OllamaLLM(model="llama3") 
+    prompt = ChatPromptTemplate.from_template(template)  
+    return model, prompt 
 
-# Função para processar a análise financeira da IA
-def process_financial_analysis(financial_data, chain):
-    return chain.invoke({"financial_data": financial_data})
+def process_financial_analysis(json_data, model, prompt):
+    prompt_filled = prompt.format(json_data=json_data) 
+    result = model.invoke(prompt_filled) 
+    return result
 
-# Função para limpar os dados da planilha
+
 def clean_data(df):
-    df = df.drop_duplicates()
-    df = df.dropna()
+    df = df.drop_duplicates() 
+    df = df.dropna()  
     return df
 
-# Função para ler a planilha e converter para JSON
+
 def convert_excel_to_json(file_path):
     try:
         df = pd.read_excel(file_path)
         df_clean = clean_data(df)
-        json_data = df_clean.to_json(orient="records")
+        json_data = df_clean.to_json(orient="records") 
         return json_data
     except Exception as e:
         print(f"Error reading the Excel file: {e}")
         return None
 
-
 def main():
+    model, prompt = initialize_model()  
     
-    chain = initialize_model()
-
-    
-    excel_file = "Mocks/preenchido.xlsx"
-    json_data = convert_excel_to_json(excel_file)
-
+    excel_file = "Mocks/preenchido.xlsx" 
+    json_data = convert_excel_to_json(excel_file) 
     if json_data:
         print("JSON data converted successfully:")
-        result = process_financial_analysis(json_data, chain)
+        result = process_financial_analysis(json_data, model, prompt) 
         print("Financial Analysis:")
-        print(result)
+        print(result)  # Exibe o resultado
     else:
         print("Failed to convert Excel to JSON.")
 
